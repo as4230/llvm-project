@@ -19243,6 +19243,12 @@ bool AArch64TargetLowering::optimizeExtendOrTruncateConversion(
                       m_Intrinsic<Intrinsic::vector_partial_reduce_add>(
                           m_Value(), m_Specific(I))))
               return true;
+            // partial_reduce(acc, mul(zext(i8), zext)) absorbs both extends.
+            if (match(SingleUser, m_c_Mul(m_Specific(I), m_ZExt(m_Value()))) &&
+                SingleUser->hasOneUse() &&
+                match(SingleUser->user_back(),
+                      m_Intrinsic<Intrinsic::vector_partial_reduce_add>()))
+              return true;
             return false;
           }))
         return false;

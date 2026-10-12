@@ -174,14 +174,10 @@ define <2 x i64> @zext_v16i8_to_v16i64_mul_partial_reduce_in_loop(ptr %src1, ptr
 ; CHECK-NEXT:    [[ACC:%.*]] = phi <2 x i64> [ zeroinitializer, [[ENTRY]] ], [ [[RED:%.*]], [[LOOP]] ]
 ; CHECK-NEXT:    [[SRC1_GEP:%.*]] = getelementptr i8, ptr [[SRC1:%.*]], i64 [[IV]]
 ; CHECK-NEXT:    [[LOAD1:%.*]] = load <16 x i8>, ptr [[SRC1_GEP]], align 16
-; CHECK-NEXT:    [[TMP0:%.*]] = shufflevector <16 x i8> [[LOAD1]], <16 x i8> <i8 0, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison>, <64 x i32> <i32 0, i32 16, i32 16, i32 16, i32 1, i32 16, i32 16, i32 16, i32 2, i32 16, i32 16, i32 16, i32 3, i32 16, i32 16, i32 16, i32 4, i32 16, i32 16, i32 16, i32 5, i32 16, i32 16, i32 16, i32 6, i32 16, i32 16, i32 16, i32 7, i32 16, i32 16, i32 16, i32 8, i32 16, i32 16, i32 16, i32 9, i32 16, i32 16, i32 16, i32 10, i32 16, i32 16, i32 16, i32 11, i32 16, i32 16, i32 16, i32 12, i32 16, i32 16, i32 16, i32 13, i32 16, i32 16, i32 16, i32 14, i32 16, i32 16, i32 16, i32 15, i32 16, i32 16, i32 16>
-; CHECK-NEXT:    [[TMP1:%.*]] = bitcast <64 x i8> [[TMP0]] to <16 x i32>
-; CHECK-NEXT:    [[EXT1:%.*]] = zext <16 x i32> [[TMP1]] to <16 x i64>
+; CHECK-NEXT:    [[EXT1:%.*]] = zext <16 x i8> [[LOAD1]] to <16 x i64>
 ; CHECK-NEXT:    [[SRC2_GEP:%.*]] = getelementptr i8, ptr [[SRC2:%.*]], i64 [[IV]]
 ; CHECK-NEXT:    [[LOAD2:%.*]] = load <16 x i8>, ptr [[SRC2_GEP]], align 16
-; CHECK-NEXT:    [[TMP3:%.*]] = shufflevector <16 x i8> [[LOAD2]], <16 x i8> <i8 0, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison, i8 poison>, <64 x i32> <i32 0, i32 16, i32 16, i32 16, i32 1, i32 16, i32 16, i32 16, i32 2, i32 16, i32 16, i32 16, i32 3, i32 16, i32 16, i32 16, i32 4, i32 16, i32 16, i32 16, i32 5, i32 16, i32 16, i32 16, i32 6, i32 16, i32 16, i32 16, i32 7, i32 16, i32 16, i32 16, i32 8, i32 16, i32 16, i32 16, i32 9, i32 16, i32 16, i32 16, i32 10, i32 16, i32 16, i32 16, i32 11, i32 16, i32 16, i32 16, i32 12, i32 16, i32 16, i32 16, i32 13, i32 16, i32 16, i32 16, i32 14, i32 16, i32 16, i32 16, i32 15, i32 16, i32 16, i32 16>
-; CHECK-NEXT:    [[TMP4:%.*]] = bitcast <64 x i8> [[TMP3]] to <16 x i32>
-; CHECK-NEXT:    [[EXT2:%.*]] = zext <16 x i32> [[TMP4]] to <16 x i64>
+; CHECK-NEXT:    [[EXT2:%.*]] = zext <16 x i8> [[LOAD2]] to <16 x i64>
 ; CHECK-NEXT:    [[MUL:%.*]] = mul <16 x i64> [[EXT1]], [[EXT2]]
 ; CHECK-NEXT:    [[RED]] = call <2 x i64> @llvm.vector.partial.reduce.add.v2i64.v16i64(<2 x i64> [[ACC]], <16 x i64> [[MUL]])
 ; CHECK-NEXT:    [[IV_NEXT]] = add nuw i64 [[IV]], 16
