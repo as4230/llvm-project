@@ -2073,3 +2073,65 @@ define <4 x i32> @partial_reduce_umull_zeroacc_v16i8tov4i32(<16 x i8> %u, <16 x 
   %partial.reduce = tail call <4 x i32> @llvm.vector.partial.reduce.add(<4 x i32> zeroinitializer, <16 x i32> %mult)
   ret <4 x i32> %partial.reduce
 }
+
+define <2 x i64> @udot_in_loop_8to64(ptr %p1, ptr %p2){
+; CHECK-COMMON-LABEL: udot_in_loop_8to64:
+; CHECK-COMMON:       // %bb.0: // %entry
+; CHECK-COMMON-NEXT:    adrp x8, .LCPI76_0
+; CHECK-COMMON-NEXT:    movi v1.2d, #0000000000000000
+; CHECK-COMMON-NEXT:    adrp x9, .LCPI76_2
+; CHECK-COMMON-NEXT:    ldr q2, [x8, :lo12:.LCPI76_0]
+; CHECK-COMMON-NEXT:    adrp x8, .LCPI76_1
+; CHECK-COMMON-NEXT:    adrp x10, .LCPI76_3
+; CHECK-COMMON-NEXT:    ldr q3, [x8, :lo12:.LCPI76_1]
+; CHECK-COMMON-NEXT:    ldr q4, [x9, :lo12:.LCPI76_2]
+; CHECK-COMMON-NEXT:    ldr q5, [x10, :lo12:.LCPI76_3]
+; CHECK-COMMON-NEXT:    mov x8, xzr
+; CHECK-COMMON-NEXT:  .LBB76_1: // %vector.body
+; CHECK-COMMON-NEXT:    // =>This Inner Loop Header: Depth=1
+; CHECK-COMMON-NEXT:    ldr q6, [x0, x8]
+; CHECK-COMMON-NEXT:    ldr q7, [x1, x8]
+; CHECK-COMMON-NEXT:    mov v0.16b, v1.16b
+; CHECK-COMMON-NEXT:    add x8, x8, #16
+; CHECK-COMMON-NEXT:    tbl v16.16b, { v6.16b }, v2.16b
+; CHECK-COMMON-NEXT:    tbl v17.16b, { v7.16b }, v2.16b
+; CHECK-COMMON-NEXT:    tbl v18.16b, { v6.16b }, v3.16b
+; CHECK-COMMON-NEXT:    tbl v19.16b, { v7.16b }, v3.16b
+; CHECK-COMMON-NEXT:    cmp x8, #16
+; CHECK-COMMON-NEXT:    umlal v1.2d, v16.2s, v17.2s
+; CHECK-COMMON-NEXT:    umlal2 v1.2d, v16.4s, v17.4s
+; CHECK-COMMON-NEXT:    tbl v16.16b, { v6.16b }, v4.16b
+; CHECK-COMMON-NEXT:    tbl v17.16b, { v7.16b }, v4.16b
+; CHECK-COMMON-NEXT:    tbl v6.16b, { v6.16b }, v5.16b
+; CHECK-COMMON-NEXT:    tbl v7.16b, { v7.16b }, v5.16b
+; CHECK-COMMON-NEXT:    umlal v1.2d, v18.2s, v19.2s
+; CHECK-COMMON-NEXT:    umlal2 v1.2d, v18.4s, v19.4s
+; CHECK-COMMON-NEXT:    umlal v1.2d, v16.2s, v17.2s
+; CHECK-COMMON-NEXT:    umlal2 v1.2d, v16.4s, v17.4s
+; CHECK-COMMON-NEXT:    umlal v1.2d, v6.2s, v7.2s
+; CHECK-COMMON-NEXT:    umlal2 v1.2d, v6.4s, v7.4s
+; CHECK-COMMON-NEXT:    b.ne .LBB76_1
+; CHECK-COMMON-NEXT:  // %bb.2: // %end
+; CHECK-COMMON-NEXT:    ret
+entry:
+  br label %vector.body
+
+vector.body:
+  %index = phi i64 [ 0, %entry ], [ %index.next, %vector.body ]
+  %acc = phi <2 x i64> [ zeroinitializer, %entry ], [ %partial.reduce, %vector.body ]
+  %gep1 = getelementptr i8, ptr %p1, i64 %index
+  %load1 = load <16 x i8>, ptr %gep1, align 16
+  %load1.wide = zext <16 x i8> %load1 to <16 x i64>
+  %gep2 = getelementptr i8, ptr %p2, i64 %index
+  %load2 = load <16 x i8>, ptr %gep2, align 16
+  %load2.wide = zext <16 x i8> %load2 to <16 x i64>
+  %mul = mul nuw nsw <16 x i64> %load1.wide, %load2.wide
+  %partial.reduce = tail call <2 x i64> @llvm.vector.partial.reduce.add.v2i64.v16i64(<2 x i64> %acc, <16 x i64> %mul)
+  %index.next = add nuw i64 %index, 16
+  %cmp = icmp eq i64 %index.next, 16
+  br i1 %cmp, label %end, label %vector.body
+
+end:
+  ret <2 x i64> %acc
+}
+
